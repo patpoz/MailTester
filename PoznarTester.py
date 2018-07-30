@@ -1,44 +1,48 @@
-# Plik csv z Malami musi yć w pliku z głównym plikiem .py
-#
-# Użycie pliku - odpalić plik PoznarTester.py z terminala
-# 1 - ctr+alt+t
-# 2 - dostać się do folderu z PoznarTester.py
-# 3 - w terminalu $python Poznar*
-
 import requests
-import re
 from time import sleep
 import csv
+from lxml import html
+import re
 
 
 emaillist = []
 emails = []
-res = []
 final_table = {}
+data = 0
+toFile = []
+name = []
+compare = ['E-mail address is valid']
 
-print("Witaj w MejlTesterze\n\n\n\n\nOpóźnienie jest wskazane, dlatego w trakcie trwania programu\n\n...\n\n\nmożesz śmiało iść na kawę!\n\n\n\n")
-sleep(4)
-print("Taki żarcik :) prospektuj! \n\n\n\n\n\nProspect, Prospect!")
+print("START")
+
 # Wczytuje plik csv z folderu głównego pliku PoznarTester.py
 with open('EmailList.csv', 'r') as f:
     reader = csv.reader(f)
     my_list = list(reader)
     for i in my_list:
-        # emaillist -> wypisać wszystkie możliwe kombinacje maili
-        emaillist = [i[0] + i[1] + i[2], i[1] + i[0] + i[2], i[0] + i[2]]
+        #emaillist -> wypisać wszystkie możliwe kombinacje maili
+        #emaillist = [i[0] + i[1] + i[2], i[1] + i[0] + i[2], i[0] + i[2]]
+        emaillist = [i[0]+i[2]]
         emails.extend(emaillist)
 
-# Pętla wypełnia i wysyła formularz na stronie dla każdego wygenerowanego maila
+#Pętla wypełnia i wysyła formularz na stronie dla każdego wygenerowanego maila
 for email in emails:
     payload = {'lang': 'en', 'email': email}
-    r = requests.post("http://mailtester.com/testmail.php", data=payload)
-    text = r.text
-    regex = r"(E-mail address is valid)"
-    match = re.findall(regex, text)
-    res.append(match)
-    final_table[email] = match
+    page = requests.post("http://mailtester.com/testmail.php", data=payload)
+    tree = html.fromstring(page.content)
+    data = tree.xpath('//table/tr[5]/td[5]/text()')
+    final_table[email] = data
+# jeśli email istnieje, dodaje go do toFile
+    if data == compare:
+        toFile.append(email)
+    print("Email: {}, info: {}".format(email,data))
     sleep(1.0)
 
-# póki co print, do zmiany na wygenerowanie pliku csv z gotowymi adesami do wysłania
-for key in final_table.items():
-    print(key)
+#Dodawanie listy istniejących maili (toFile) do Check.csv
+with open('Check.csv', 'w') as fwriter:
+    writer = csv.writer(fwriter)
+    fwriter.write('Email')
+    fwriter.write('\n')
+    for item in toFile:
+        fwriter.write(item)
+        fwriter.write("\n")
