@@ -11,7 +11,6 @@ valid = []
 invalid = []
 data = []
 data2 = []
-check = []
 
 print("START")
 
@@ -34,22 +33,24 @@ with open('EmailList.csv', 'r') as f:
                 data = tree.xpath('//table/tr[5]/td[5]/text()')
                 data2 = tree.xpath('//table/tr[4]/td[5]/text()')
                 data_list.extend(data)
-                print(email)
+                if not data:
+                    print("Email: {}, info: {}".format(email, data2))
+                else:
+                    print("Email: {}, info: {}".format(email, data))
                 sleep(3)
                 if 'E-mail address is valid' in data:
                     valid.append(email)
+                #Zamiast elif może być else, wtedy zawsze nieprawdzwy mai będzie wypisany na końcu działani programu
+                #W tym wypadku jednak wypisuje tylko maile, gdzie wysypała się stronka więc jest ok
                 elif not data:
                     invalid.append(email)
-                    print("Email: {}, {}".format(email, data2))
                     if "Server doesn't allow e-mail address verification" in data2:
                         print("DOMENA: {} Niemożliwa do sprawdzenia!".format(item[2]))
         data2 = []
         emails = []
         data_list = []
 
-
-print(check)
-print("\nMAILE NIESPRAWDZONE:")
+print("\nMAILE/DOMENY NIESPRAWDZONE:")
 for item in invalid:
     print("Email: {}".format(item))
 
@@ -60,4 +61,3 @@ for item in valid:
 
 #TODO: Dodać kombinacje maili
 #TODO: Zrobić zapisywanie wyników do pliku w formie gotowej do wysyłki
-
