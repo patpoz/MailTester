@@ -2,16 +2,16 @@ import requests
 from time import sleep
 import csv
 from lxml import html
-import re
 
 
 emaillist = []
 emails = []
-final_table = {}
-data = 0
-toFile = []
-name = []
-compare = ['E-mail address is valid']
+data_list = []
+valid = []
+invalid = []
+data = []
+data2 = []
+check = []
 
 print("START")
 
@@ -19,30 +19,45 @@ print("START")
 with open('EmailList.csv', 'r') as f:
     reader = csv.reader(f)
     my_list = list(reader)
-    for i in my_list:
-        #emaillist -> wypisać wszystkie możliwe kombinacje maili
-        #emaillist = [i[0] + i[1] + i[2], i[1] + i[0] + i[2], i[0] + i[2]]
-        emaillist = [i[0]+i[2]]
-        emails.extend(emaillist)
+# tworzenie możliwych maili dla danej osoby.
+    for item in my_list:
+        emaillist = [item[0]+item[1]+item[2], 'kontakt'+item[2], item[0][0]+item[1]+item[2]]
+        for email in emaillist:
+            if "Server doesn't allow e-mail address verification" in data2:
+                pass
+            elif 'E-mail address is valid' in data_list:
+                    pass
+            else:
+                payload = {'lang': 'en', 'email': email}
+                page = requests.post("http://mailtester.com/testmail.php", data=payload)
+                tree = html.fromstring(page.content)
+                data = tree.xpath('//table/tr[5]/td[5]/text()')
+                data2 = tree.xpath('//table/tr[4]/td[5]/text()')
+                data_list.extend(data)
+                print(email)
+                sleep(3)
+                if 'E-mail address is valid' in data:
+                    valid.append(email)
+                elif not data:
+                    invalid.append(email)
+                    print("Email: {}, {}".format(email, data2))
+                    if "Server doesn't allow e-mail address verification" in data2:
+                        print("DOMENA: {} Niemożliwa do sprawdzenia!".format(item[2]))
+        data2 = []
+        emails = []
+        data_list = []
 
-#Pętla wypełnia i wysyła formularz na stronie dla każdego wygenerowanego maila
-for email in emails:
-    payload = {'lang': 'en', 'email': email}
-    page = requests.post("http://mailtester.com/testmail.php", data=payload)
-    tree = html.fromstring(page.content)
-    data = tree.xpath('//table/tr[5]/td[5]/text()')
-    final_table[email] = data
-# jeśli email istnieje, dodaje go do toFile
-    if data == compare:
-        toFile.append(email)
-    print("Email: {}, info: {}".format(email,data))
-    sleep(1.0)
 
-#Dodawanie listy istniejących maili (toFile) do Check.csv
-with open('Check.csv', 'w') as fwriter:
-    writer = csv.writer(fwriter)
-    fwriter.write('Email')
-    fwriter.write('\n')
-    for item in toFile:
-        fwriter.write(item)
-        fwriter.write("\n")
+print(check)
+print("\nMAILE NIESPRAWDZONE:")
+for item in invalid:
+    print("Email: {}".format(item))
+
+print("\nODNALEZIONE MAILE:\n")
+for item in valid:
+    print("Email: {}".format(item))
+
+
+#TODO: Dodać kombinacje maili
+#TODO: Zrobić zapisywanie wyników do pliku w formie gotowej do wysyłki
+
